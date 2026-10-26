@@ -4,7 +4,146 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart FET Assistant</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+    --bg:#0f1117;--surface:#1a1d27;--surface2:#242836;--border:#2e3348;
+    --text:#e2e4ed;--text2:#8b90a5;--accent:#4f8cff;--accent2:#36c6a4;
+    --danger:#ef5b6b;--warn:#f0a832;--radius:8px;
+    --nav-w:240px;--hd-h:56px;--ft-h:36px;
+}
+html{font-size:14px}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+#hd{position:fixed;top:0;left:0;right:0;height:var(--hd-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;z-index:100}
+.brand{display:flex;align-items:center;gap:.6rem}
+.brand h1{font-size:1.1rem;font-weight:600}
+.brand-icon{font-size:1.3rem}
+.badge{font-size:.7rem;background:var(--surface2);padding:2px 8px;border-radius:10px;color:var(--accent2);margin-left:8px}
+.actions{display:flex;gap:.5rem}
+.status-bar{display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--text2)}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.status-dot.offline{background:var(--danger)}
+.status-dot.online{background:var(--accent2)}
+.audit-badge{background:var(--surface2);padding:2px 8px;border-radius:10px;font-size:.7rem}
+
+#nv{position:fixed;top:var(--hd-h);left:0;bottom:var(--ft-h);width:var(--nav-w);background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;z-index:90;padding:.8rem 0;display:flex;flex-direction:column}
+.nav-section{padding:0 .6rem .8rem}
+.nav-section h3{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);padding:.4rem .6rem .3rem}
+.nav-item{display:block;width:100%;text-align:right;background:none;border:none;color:var(--text);padding:.55rem .8rem;cursor:pointer;border-radius:6px;font-size:.85rem;transition:background .15s}
+.nav-item:hover{background:var(--surface2)}
+.nav-item.active{background:var(--accent);color:#fff}
+.nav-footer{margin-top:auto;padding:1rem .8rem;font-size:.7rem;color:var(--text2);text-align:center}
+.nav-footer .version{display:block;margin-bottom:2px}
+
+#lb{position:fixed;bottom:0;left:0;right:0;height:var(--ft-h);background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--text2);z-index:100}
+
+#v{margin:var(--hd-h) 0 var(--ft-h) var(--nav-w);padding:1.5rem;min-height:calc(100vh - var(--hd-h) - var(--ft-h))}
+.panel{display:none;animation:fadeIn .2s}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.panel h2{font-size:1.3rem;margin-bottom:1rem;font-weight:600}
+
+#cidf{position:fixed;bottom:0;right:0;width:100%;height:var(--ft-h);text-align:center;font-size:.7rem;color:var(--text2);display:flex;align-items:center;justify-content:center;background:var(--surface);border-top:1px solid var(--border);z-index:101}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center}
+.stat-label{display:block;font-size:.75rem;color:var(--text2);margin-bottom:.3rem}
+.stat-value{font-size:1.8rem;font-weight:700;color:var(--accent)}
+
+.fairness-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-top:1rem}
+.fairness-panel h3{font-size:.9rem;margin-bottom:.8rem;color:var(--text2)}
+.fairness-bars{display:flex;flex-direction:column;gap:.4rem}
+.fbar{display:flex;align-items:center;gap:.6rem;font-size:.8rem}
+.fbar-name{width:100px;text-align:left}
+.fbar-track{flex:1;height:18px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.fbar-fill{height:100%;background:var(--accent2);border-radius:4px;transition:width .4s}
+.fbar-pct{width:40px;text-align:left;font-size:.75rem;color:var(--text2)}
+
+.toolbar{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem}
+.toolbar-hint{font-size:.75rem;color:var(--text2);margin-right:auto}
+
+.btn{padding:.5rem 1rem;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:500;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-success{background:var(--accent2);color:#0f1117}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-sm{padding:.35rem .7rem;font-size:.75rem}
+
+.data-table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--radius);overflow:hidden}
+.data-table th,.data-table td{padding:.6rem .8rem;text-align:right;border-bottom:1px solid var(--border);font-size:.85rem}
+.data-table th{background:var(--surface2);font-weight:600;color:var(--text2);font-size:.75rem;text-transform:uppercase}
+.data-table tbody tr:hover{background:var(--surface2)}
+.data-table .del-btn{background:none;border:none;color:var(--danger);cursor:pointer;font-size:1rem}
+
+.duty-type-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.8rem;margin-bottom:1rem}
+.duty-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.8rem;font-size:.85rem}
+.duty-card h4{margin-bottom:.3rem;font-size:.9rem}
+.duty-card span{color:var(--text2);font-size:.75rem}
+
+.duty-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;margin-top:1rem}
+.duty-day{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.8rem}
+.duty-day h4{font-size:.8rem;color:var(--accent);margin-bottom:.5rem}
+.duty-slot{background:var(--surface2);border-radius:4px;padding:.4rem .6rem;margin-bottom:.3rem;font-size:.75rem;display:flex;justify-content:space-between}
+.duty-slot .slot-type{color:var(--text2)}
+.duty-slot .slot-teacher{font-weight:600}
+
+.schedule-grid{display:grid;grid-template-columns:80px repeat(5,1fr);gap:2px;margin-top:1rem}
+.sg-cell{background:var(--surface);border:1px solid var(--border);padding:.5rem;font-size:.75rem;min-height:48px}
+.sg-cell.sg-header{background:var(--surface2);font-weight:600;text-align:center;font-size:.7rem}
+.sg-cell.sg-time{text-align:center;color:var(--text2);font-weight:600}
+.sg-cell.sg-subject{color:var(--accent)}
+.sg-cell.sg-duty{color:var(--warn);font-style:italic}
+
+.export-options{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.export-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem}
+.export-card h3{font-size:.95rem;margin-bottom:.4rem}
+.export-card p{font-size:.8rem;color:var(--text2);margin-bottom:1rem}
+
+.preview-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem}
+.preview-box h3{font-size:.85rem;margin-bottom:.5rem;color:var(--text2)}
+.preview-box pre{max-height:400px;overflow:auto;font-size:.7rem;color:var(--accent2);white-space:pre-wrap;word-break:break-all}
+
+.chat-container{display:flex;flex-direction:column;height:calc(100vh - var(--hd-h) - var(--ft-h) - 120px)}
+.chat-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.6rem}
+.chat-msg{max-width:80%;padding:.6rem .9rem;border-radius:10px;font-size:.85rem;line-height:1.5}
+.chat-msg.user{align-self:flex-start;background:var(--accent);color:#fff;border-bottom-right-radius:2px}
+.chat-msg.bot{align-self:flex-end;background:var(--surface2);border-bottom-left-radius:2px}
+.chat-msg.bot.error{background:rgba(239,91,107,.15);border:1px solid var(--danger)}
+.chat-input{display:flex;gap:.5rem;padding:.8rem;background:var(--surface);border-top:1px solid var(--border)}
+.chat-input input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.55rem .8rem;color:var(--text);font-size:.85rem}
+.chat-input input:focus{outline:none;border-color:var(--accent)}
+
+.audit-log{max-height:600px;overflow-y:auto}
+.audit-entry{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.7rem .9rem;margin-bottom:.5rem;font-size:.8rem}
+.audit-entry .a-time{color:var(--text2);font-size:.7rem}
+.audit-entry .a-rule{color:var(--accent);font-weight:600}
+.audit-entry .a-detail{margin-top:.3rem;color:var(--text2)}
+
+.rules-list{display:grid;gap:.5rem}
+.rule-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.8rem}
+.rule-card h4{font-size:.85rem;color:var(--accent)}
+.rule-card p{font-size:.75rem;color:var(--text2);margin-top:.3rem}
+.rule-card .rule-priority{float:left;font-size:.7rem;background:var(--surface2);padding:2px 8px;border-radius:10px}
+
+.form-select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;color:var(--text);font-size:.85rem}
+
+.noprint{display:none}
+
+@media(max-width:900px){
+    #nv{width:200px}
+    #v{margin-right:200px}
+    .schedule-grid{grid-template-columns:60px repeat(5,1fr);font-size:.7rem}
+    .export-options{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+    #nv{display:none}
+    #v{margin-right:0;padding:1rem}
+    .duty-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+</style>
 </head>
 <body>
 <div class="app-container">
@@ -210,6 +349,1134 @@
 
 </div>
 
-<script type="module" src="js/app.js"></script>
+<script>
+const __D={"school": {"name": "مدرستي", "year": "2025-2026", "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "hours": ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00"]}, "teachers": [{"id": 0, "name": "أحمد محمد", "subject": "Math"}, {"id": 1, "name": "فاطمة علي", "subject": "Physics"}, {"id": 2, "name": "خالد عمر", "subject": "Chemistry"}, {"id": 3, "name": "سارة حسن", "subject": "Biology"}, {"id": 4, "name": "عمر يوسف", "subject": "Arabic"}, {"id": 5, "name": "ليلى كمال", "subject": "English"}, {"id": 6, "name": "حسن طارق", "subject": "History"}, {"id": 7, "name": "منى سامي", "subject": "Geography"}], "groups": [{"id": 0, "name": "10A", "size": 30}, {"id": 1, "name": "10B", "size": 28}, {"id": 2, "name": "11A", "size": 32}, {"id": 3, "name": "11B", "size": 29}, {"id": 4, "name": "12A", "size": 31}, {"id": 5, "name": "12B", "size": 27}], "subjects": [{"id": 0, "name": "Math", "weeklyHours": 5}, {"id": 1, "name": "Physics", "weeklyHours": 4}, {"id": 2, "name": "Chemistry", "weeklyHours": 4}, {"id": 3, "name": "Biology", "weeklyHours": 4}, {"id": 4, "name": "Arabic", "weeklyHours": 5}, {"id": 5, "name": "English", "weeklyHours": 5}, {"id": 6, "name": "History", "weeklyHours": 3}, {"id": 7, "name": "Geography", "weeklyHours": 3}], "dutyTypes": [{"id": 0, "name": "Morning Duty", "slots": 3, "days": [0, 1, 2, 3, 4]}, {"id": 1, "name": "Lunch Duty", "slots": 2, "days": [0, 1, 2, 3, 4]}, {"id": 2, "name": "Evening Duty", "slots": 2, "days": [0, 1, 2, 3]}, {"id": 3, "name": "Weekend Duty", "slots": 1, "days": [4]}]};
+const __f=window.fetch;
+window.fetch=(u,o)=>String(u).includes("default.json")?Promise.resolve(new Response(JSON.stringify(__D),{status:200})):__f(u,o);
+</script>
+<script>
+class SmartCore {
+    constructor() {
+        this.rules = new Map();
+        this.auditLog = [];
+        this.auditSeq = 0;
+        this._registerDefaultRules();
+    }
+
+    _registerDefaultRules() {
+        const R = this.rules;
+        const now = Date.now();
+
+        R.set('generate-timetable', {
+            fn: () => 'action:generate',
+            cond: (t) => /^(generate|build|create)\s+(timetable|schedule|jadwal)/i.test(t),
+            prio: 1, desc: 'Generate full timetable with duty and assignment'
+        });
+        R.set('export-fet', {
+            fn: () => 'action:export-fet',
+            cond: (t) => /^(export|download|save|send)\s+(to\s+)?(fet|xml|csv)/i.test(t),
+            prio: 2, desc: 'Export timetable to FET XML or CSV'
+        });
+        R.set('assign-subjects', {
+            fn: () => 'action:assign',
+            cond: (t) => /^(assign|auto\s*assign|balance|distribute)\s*(subjects|courses)?/i.test(t),
+            prio: 3, desc: 'Auto-assign subjects to teachers by load balance'
+        });
+        R.set('gen-duty', {
+            fn: () => 'action:duty',
+            cond: (t) => /^(generate|make|create)\s+(duty|guard|roster|حراسة)/i.test(t),
+            prio: 4, desc: 'Generate fair duty roster'
+        });
+        R.set('status', {
+            fn: (t, ctx) => {
+                const s = ctx.state;
+                return `Teachers: ${s.teachers.length} | Groups: ${s.groups.length} | Subjects: ${s.subjects.length} | Activities: ${s.activities.length} | Audit: ${this.auditLog.length}`;
+            },
+            cond: (t) => /^(status|state|info|summary|حالة|ملخص)/i.test(t),
+            prio: 5, desc: 'Show current system state'
+        });
+        R.set('fairness', {
+            fn: (t, ctx) => {
+                const loads = ctx.state.teacherLoads || {};
+                const names = ctx.state.teachers.map(t => t.name);
+                const lines = names.map((n, i) => {
+                    const l = loads[i] || 0;
+                    const max = Math.max(...Object.values(loads), 1);
+                    const pct = max > 0 ? Math.round((l / max) * 100) : 0;
+                    return `${n}: ${l}h (${pct}%)`;
+                }).join('\n');
+                const vals = Object.values(loads);
+                const mean = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+                const variance = vals.length ? vals.reduce((a, v) => a + (v - mean) ** 2, 0) / vals.length : 0;
+                const stdDev = Math.sqrt(variance);
+                const fairIndex = mean > 0 ? Math.max(0, 100 - (stdDev / mean) * 100) : 100;
+                return `Load Distribution:\n${lines}\n\nFairness Index: ${fairIndex.toFixed(1)}/100\nStd Dev: ${stdDev.toFixed(2)}`;
+            },
+            cond: (t) => /^(fair|balance|fairness|عدل|توازن|توزيع)/i.test(t),
+            prio: 6, desc: 'Show fairness index and load distribution'
+        });
+        R.set('add-teacher', {
+            fn: (t) => {
+                const m = t.match(/add\s+teacher\s+(?:called\s+|name\s+)?(.+?)(?:\s+for\s+(.+))?$/i);
+                if (!m) return 'ERROR: Format: "add teacher <name> for <subject>"';
+                return JSON.stringify({ action: 'add-teacher', name: m[1].trim(), subject: (m[2] || 'General').trim() });
+            },
+            cond: (t) => /^add\s+teacher/i.test(t),
+            prio: 7, desc: 'Add a new teacher'
+        });
+        R.set('help', {
+            fn: () => `Available commands:
+  generate timetable    → build full schedule
+  assign subjects       → auto-balance teacher loads
+  generate duty         → fair duty roster
+  export fet            → download FET XML
+  status                → system state
+  fairness              → load distribution
+  add teacher <name> for <subject>
+  help                  → this list`,
+            cond: (t) => /^(help|مساعدة|commands|\?|؟)$/i.test(t),
+            prio: 8, desc: 'Show available commands'
+        });
+        R.set('reset', {
+            fn: () => 'action:reset',
+            cond: (t) => /^(reset|clear|wipe|مسح|إعادة)/i.test(t),
+            prio: 9, desc: 'Reset all data'
+        });
+        R.set('sync', {
+            fn: () => 'action:sync',
+            cond: (t) => /^(sync|sync|upload|download|مزامنة|تحديث)/i.test(t),
+            prio: 10, desc: 'Sync data'
+        });
+        R.set('greeting', {
+            fn: () => 'Smart FET Assistant ready. Type "help" for commands.',
+            cond: (t) => /^(hi|hello|hey|مرحبا|أهلا|سلام|أهلاً)\b/i.test(t.trim()),
+            prio: 20, desc: 'Greeting response'
+        });
+    }
+
+    addRule(name, cond, fn, desc, prio = 50) {
+        this.rules.set(name, { cond, fn, desc, prio });
+        return this;
+    }
+
+    execute(input, context = {}) {
+        const trace = {
+            id: ++this.auditSeq,
+            input: input.trim(),
+            timestamp: new Date().toISOString(),
+            matchedRule: null,
+            output: null,
+            error: null
+        };
+
+        const sorted = [...this.rules.entries()].sort((a, b) => (a[1].prio || 99) - (b[1].prio || 99));
+
+        for (const [name, rule] of sorted) {
+            try {
+                if (rule.cond(input.trim(), context)) {
+                    trace.matchedRule = name;
+                    trace.output = rule.fn(input.trim(), context);
+                    this.auditLog.push(trace);
+                    return { success: true, output: trace.output, rule: name, trace };
+                }
+            } catch (err) {
+                trace.error = `${name}: ${err.message}`;
+            }
+        }
+
+        trace.output = `No matching rule for: "${input}". Type "help" for available commands.`;
+        this.auditLog.push(trace);
+        return { success: false, output: trace.output, rule: null, trace };
+    }
+
+    getAuditTrail(limit = 200) {
+        return this.auditLog.slice(-limit).reverse();
+    }
+
+    getRules() {
+        return [...this.rules.entries()].map(([name, r]) => ({ name, desc: r.desc, prio: r.prio }));
+    }
+
+    getAuditCount() {
+        return this.auditLog.length;
+    }
+
+    clearAudit() {
+        this.auditLog = [];
+        this.auditSeq = 0;
+    }
+}
+
+const ESC = (s) => {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+};
+
+class FETExporter {
+    constructor(state) {
+        this.state = state;
+    }
+
+    buildXML() {
+        const s = this.state;
+        const school = s.school;
+        const teachers = s.teachers || [];
+        const groups = s.groups || [];
+        const subjects = s.subjects || [];
+        const activities = s.activities || [];
+        const dutyActivities = s.dutyActivities || [];
+        const constraints = this._buildConstraints();
+
+        const days = (school.days || []).map((d, i) =>
+            `            <day>\n                <id>${i}</id>\n                <name>${ESC(d)}</name>\n            </day>`
+        ).join('\n');
+
+        const hours = (school.hours || []).map((h, i) =>
+            `            <hour>\n                <id>${i}</id>\n                <name>${ESC(h)}</name>\n            </hour>`
+        ).join('\n');
+
+        const groupsXML = groups.map(g => {
+            const actIds = activities.filter(a => a.student_group === g.id).map(a => `<activity>${a.id}</activity>`).join('\n                    ');
+            return `            <student_group>\n                <id>${g.id}</id>\n                <name>${ESC(g.name)}</name>\n                <size>${g.size || 0}</size>\n                <activities>\n                    ${actIds}\n                </activities>\n            </student_group>`;
+        }).join('\n');
+
+        const allActs = [...activities, ...dutyActivities];
+        const actsXML = allActs.map(a =>
+            `            <activity>\n                <id>${a.id}</id>\n                <name>${ESC(a.name)}</name>\n                <teacher>${a.teacher}</teacher>\n                <student_group>${a.student_group}</student_group>\n                <duration>${a.duration || 1}</duration>\n                <activity_type>${a.activity_type || 0}</activity_type>\n                <room_needed>${a.room_needed != null ? a.room_needed : 1}</room_needed>\n                <active>1</active>\n            </activity>`
+        ).join('\n');
+
+        const actTypes = [
+            { id: 0, name: 'Regular' },
+            { id: 1, name: 'Morning Duty' },
+            { id: 2, name: 'Lunch Duty' },
+            { id: 3, name: 'Evening Duty' },
+            { id: 4, name: 'Weekend Duty' }
+        ];
+        const actTypesXML = actTypes.map(t =>
+            `            <activity_type>\n                <id>${t.id}</id>\n                <name>${ESC(t.name)}</name>\n            </activity_type>`
+        ).join('\n');
+
+        const teachersXML = teachers.map(t => {
+            const tActs = allActs.filter(a => a.teacher === t.id).map(a => `<activity>${a.id}</activity>`).join('\n                    ');
+            return `            <teacher>\n                <id>${t.id}</id>\n                <name>${ESC(t.name)}</name>\n                <activity_list>\n                    ${tActs}\n                </activity_list>\n            </teacher>`;
+        }).join('\n');
+
+        const rooms = (s.rooms || []).map((r, i) =>
+            `            <room>\n                <id>${i}</id>\n                <name>${ESC(r.name || 'Room ' + (i + 1))}</name>\n                <capacity>${r.capacity || 100}</capacity>\n            </room>`
+        ).join('\n');
+
+        return `<?xml version="1.0" encoding="UTF-8"?>
+<timetables>
+    <timetable>
+        <meta>
+            <name>
+                <name>${ESC(school.name || 'School')}</name>
+                <description>Generated by Smart FET Assistant — ${school.year || ''} — Deterministic Engine v1.0</description>
+            </name>
+        </meta>
+        <students_groups>
+${groupsXML}
+        </students_groups>
+        <activities>
+${actsXML}
+        </activities>
+        <activity_types>
+${actTypesXML}
+        </activity_types>
+        <teachers>
+${teachersXML}
+        </teachers>
+        <rooms>
+${rooms}
+        </rooms>
+        <days>
+${days}
+        </days>
+        <hours>
+${hours}
+        </hours>
+        <constraints>
+${constraints}
+        </constraints>
+    </timetable>
+</timetables>`;
+    }
+
+    _buildConstraints() {
+        const s = this.state;
+        const teachers = s.teachers || [];
+        const acts = [...(s.activities || []), ...(s.dutyActivities || [])];
+        const lines = [];
+
+        teachers.forEach(t => {
+            const tActs = acts.filter(a => a.teacher === t.id);
+            if (tActs.length < 2) return;
+            const actPairs = [];
+            for (let i = 0; i < tActs.length; i++) {
+                for (let j = i + 1; j < tActs.length; j++) {
+                    actPairs.push(`<activity>${tActs[i].id}</activity>\n                        <activity>${tActs[j].id}</activity>`);
+                }
+            }
+            if (actPairs.length > 0) {
+                lines.push(`            <hard_constraint>
+                <hard_constraint_type>
+                    <different_activities_at_the_same_time>
+                        <id>0</id>
+                        <weight>100</weight>
+                        <active>1</active>
+                    </different_activities_at_the_same_time>
+                </hard_constraint_type>
+                <teacher>
+                    <id>${t.id}</id>
+                </teacher>
+                <activity_list>
+${actPairs.map(p => '                    <activity>\n                        ' + p + '\n                    </activity>').join('\n')}
+                </activity_list>
+            </hard_constraint>`);
+            }
+        });
+
+        const maxPerDay = 8;
+        teachers.forEach(t => {
+            lines.push(`            <hard_constraint>
+                <hard_constraint_type>
+                    <activity_maximum_hours_per_day>
+                        <id>0</id>
+                        <weight>100</weight>
+                        <active>1</active>
+                        <value>${maxPerDay}</value>
+                    </activity_maximum_hours_per_day>
+                </hard_constraint_type>
+                <teacher>
+                    <id>${t.id}</id>
+                </teacher>
+            </hard_constraint>`);
+        });
+
+        return lines.join('\n');
+    }
+
+    buildCSV() {
+        const s = this.state;
+        const acts = [...(s.activities || []), ...(s.dutyActivities || [])];
+        const tName = id => (s.teachers || []).find(t => t.id === id)?.name || '';
+        const gName = id => (s.groups || []).find(g => g.id === id)?.name || '';
+        const rows = ['Activity_ID,Activity_Name,Teacher,Student_Group,Duration,Activity_Type,Room_Needed,Active'];
+        acts.forEach(a => {
+            rows.push([
+                a.id, `"${a.name}"`, `"${tName(a.teacher)}"`, `"${gName(a.student_group)}"`,
+                a.duration || 1, a.activity_type || 0, a.room_needed != null ? a.room_needed : 1, 1
+            ].join(','));
+        });
+        return rows.join('\n');
+    }
+
+    downloadXML(filename = 'timetable.fet') {
+        const xml = this.buildXML();
+        const blob = new Blob([xml], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return xml;
+    }
+
+    downloadCSV(filename = 'timetable.csv') {
+        const csv = this.buildCSV();
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return csv;
+    }
+}
+
+class DutyEngine {
+    constructor(state, auditLog) {
+        this.state = state;
+        this.auditLog = auditLog;
+    }
+
+    generate() {
+        const s = this.state;
+        const teachers = s.teachers;
+        const dutyTypes = s.dutyTypes;
+        const days = s.school.days;
+        const result = { days: [], audit: [] };
+        const loadCounter = new Map(teachers.map(t => [t.id, 0]));
+        const maxPerTeacher = Math.ceil(
+            (dutyTypes.reduce((sum, dt) => sum + dt.slots * dt.days.length, 0)) / teachers.length + 1
+        );
+
+        const rotation = [...teachers];
+        let cursor = 0;
+
+        const pickTeacher = () => {
+            const sorted = [...loadCounter.entries()]
+                .filter(([id]) => loadCounter.get(id) < maxPerTeacher)
+                .sort((a, b) => a[1] - b[1]);
+            if (sorted.length === 0) {
+                const allSorted = [...loadCounter.entries()].sort((a, b) => a[1] - b[1]);
+                return allSorted[0][0];
+            }
+            return sorted[0][0];
+        };
+
+        days.forEach((dayName, dayIdx) => {
+            const daySlots = [];
+            dutyTypes.forEach(dt => {
+                if (!dt.days.includes(dayIdx)) return;
+                for (let slot = 0; slot < dt.slots; slot++) {
+                    const tid = pickTeacher();
+                    loadCounter.set(tid, loadCounter.get(tid) + 1);
+                    daySlots.push({
+                        type: dt.name,
+                        type_id: dt.id,
+                        teacher_id: tid,
+                        teacher_name: teachers[tid].name
+                    });
+                    this.auditLog.push({
+                        action: 'duty-assign',
+                        day: dayName,
+                        type: dt.name,
+                        teacher: teachers[tid].name,
+                        slot: slot + 1,
+                        load_after: loadCounter.get(tid),
+                        max_allowed: maxPerTeacher,
+                        ts: new Date().toISOString()
+                    });
+                }
+            });
+            result.days.push({ name: dayName, slots: daySlots });
+        });
+
+        s.dutyActivities = [];
+        let dutyActId = 1000;
+        days.forEach((dayName, dayIdx) => {
+            result.days[dayIdx].slots.forEach(slot => {
+                s.dutyActivities.push({
+                    id: dutyActId++,
+                    name: slot.type,
+                    teacher: slot.teacher_id,
+                    student_group: 0,
+                    duration: 1,
+                    activity_type: slot.type_id,
+                    room_needed: 0,
+                    day: dayIdx
+                });
+            });
+        });
+
+        s.teacherLoads = s.teacherLoads || {};
+        result.days.forEach(d => {
+            d.slots.forEach(sl => {
+                s.teacherLoads[sl.teacher_id] = (s.teacherLoads[sl.teacher_id] || 0) + 1;
+            });
+        });
+
+        return result;
+    }
+
+    getFairnessIndex() {
+        const loads = Object.values(this.state.teacherLoads || {});
+        if (loads.length === 0) return 100;
+        const mean = loads.reduce((a, b) => a + b, 0) / loads.length;
+        if (mean === 0) return 100;
+        const stdDev = Math.sqrt(loads.reduce((a, v) => a + (v - mean) ** 2, 0) / loads.length);
+        return Math.max(0, Math.round((1 - stdDev / mean) * 1000) / 10);
+    }
+}
+
+class AssignmentEngine {
+    constructor(state, auditLog) {
+        this.state = state;
+        this.auditLog = auditLog;
+    }
+
+    autoAssign() {
+        const s = this.state;
+        const teachers = s.teachers;
+        const groups = s.groups;
+        const subjects = s.subjects;
+        const result = [];
+        const teacherLoad = new Map(teachers.map(t => [t.id, 0]));
+        const teacherSubjectMap = new Map(teachers.map(t => [t.id, t.subject || null]));
+        const maxHoursPerTeacher = 30;
+
+        let actId = 0;
+        s.activities = [];
+
+        groups.forEach(g => {
+            subjects.forEach(sub => {
+                const candidates = teachers
+                    .filter(t => t.subject === sub.name || !t.subject)
+                    .sort((a, b) => (teacherLoad.get(a.id) || 0) - (teacherLoad.get(b.id) || 0));
+
+                if (candidates.length === 0) {
+                    const allSorted = [...teachers].sort((a, b) =>
+                        (teacherLoad.get(a.id) || 0) - (teacherLoad.get(b.id) || 0)
+                    );
+                    candidates.push(allSorted[0]);
+                }
+
+                const teacher = candidates[0];
+                const totalHours = sub.weeklyHours * groups.length;
+                const perGroup = sub.weeklyHours;
+
+                for (let h = 0; h < perGroup; h++) {
+                    s.activities.push({
+                        id: actId++,
+                        name: sub.name,
+                        teacher: teacher.id,
+                        student_group: g.id,
+                        duration: 1,
+                        activity_type: 0,
+                        room_needed: 1
+                    });
+                }
+
+                const newLoad = (teacherLoad.get(teacher.id) || 0) + perGroup;
+                teacherLoad.set(teacher.id, newLoad);
+
+                result.push({
+                    subject: sub.name,
+                    teacher: teacher.name,
+                    group: g.name,
+                    hours: perGroup,
+                    loadPct: Math.min(100, Math.round((newLoad / maxHoursPerTeacher) * 100))
+                });
+
+                this.auditLog.push({
+                    action: 'assign',
+                    subject: sub.name,
+                    teacher: teacher.name,
+                    group: g.name,
+                    hours: perGroup,
+                    load_after: newLoad,
+                    max: maxHoursPerTeacher,
+                    ts: new Date().toISOString()
+                });
+            });
+        });
+
+        s.teacherLoads = {};
+        teachers.forEach(t => {
+            s.teacherLoads[t.id] = teacherLoad.get(t.id) || 0;
+        });
+
+        return result;
+    }
+
+    getFairnessIndex() {
+        const loads = Object.values(this.state.teacherLoads || {});
+        if (loads.length === 0) return 100;
+        const mean = loads.reduce((a, b) => a + b, 0) / loads.length;
+        if (mean === 0) return 100;
+        const stdDev = Math.sqrt(loads.reduce((a, v) => a + (v - mean) ** 2, 0) / loads.length);
+        return Math.max(0, Math.round((1 - stdDev / mean) * 1000) / 10);
+    }
+}
+
+class SyncEngine {
+    constructor() {
+        this.online = navigator.onLine;
+        this._listeners = [];
+        this._lastSync = null;
+        window.addEventListener('online', () => { this.online = true; this._notify(); });
+        window.addEventListener('offline', () => { this.online = false; this._notify(); });
+    }
+
+    _notify() {
+        this._listeners.forEach(fn => fn(this.online));
+    }
+
+    onChange(fn) {
+        this._listeners.push(fn);
+        return this;
+    }
+
+    async save(data, endpoint) {
+        const ts = Date.now();
+        if (!this.online) {
+            const cached = JSON.parse(localStorage.getItem('sync-queue') || '[]');
+            cached.push({ ts, endpoint, data });
+            localStorage.setItem('sync-queue', JSON.stringify(cached));
+            return { ok: false, reason: 'offline', queued: true };
+        }
+        try {
+            const resp = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            this._lastSync = ts;
+            return { ok: resp.ok, status: resp.status };
+        } catch (e) {
+            const cached = JSON.parse(localStorage.getItem('sync-queue') || '[]');
+            cached.push({ ts, endpoint, data });
+            localStorage.setItem('sync-queue', JSON.stringify(cached));
+            return { ok: false, reason: 'error', queued: true, error: e.message };
+        }
+    }
+
+    async flushQueue(endpoint) {
+        const queue = JSON.parse(localStorage.getItem('sync-queue') || '[]');
+        if (queue.length === 0 || !this.online) return { flushed: 0 };
+        let flushed = 0;
+        const remaining = [];
+        for (const item of queue) {
+            try {
+                const resp = await fetch(item.endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item.data)
+                });
+                if (resp.ok) flushed++;
+                else remaining.push(item);
+            } catch {
+                remaining.push(item);
+            }
+        }
+        localStorage.setItem('sync-queue', JSON.stringify(remaining));
+        this._lastSync = Date.now();
+        return { flushed, remaining: remaining.length };
+    }
+
+    loadFromStorage(key) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+            try { return JSON.parse(raw); } catch { return null; }
+        }
+        return null;
+    }
+
+    saveToStorage(key, data) {
+        localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    isOnline() { return this.online; }
+    getLastSync() { return this._lastSync; }
+}
+
+
+const APP_KEY = 'smart-fet-state';
+const AUDIT_KEY = 'smart-fet-audit';
+
+function loadState() {
+    const raw = localStorage.getItem(APP_KEY);
+    if (raw) {
+        try { return JSON.parse(raw); } catch { /* fall through */ }
+    }
+    return null;
+}
+
+function saveState(s) {
+    localStorage.setItem(APP_KEY, JSON.stringify(s));
+}
+
+function loadAudit() {
+    const raw = localStorage.getItem(AUDIT_KEY);
+    if (raw) {
+        try { return JSON.parse(raw); } catch { /* fall through */ }
+    }
+    return [];
+}
+
+function saveAudit(log) {
+    localStorage.setItem(AUDIT_KEY, JSON.stringify(log.slice(-5000)));
+}
+
+async function fetchDefaultData() {
+    try {
+        const resp = await fetch('./data/default.json');
+        if (resp.ok) return await resp.json();
+    } catch { /* offline */ }
+    return null;
+}
+
+function getDefaultState() {
+    return {
+        school: { name: 'School', year: '2025-2026', days: ['Mon','Tue','Wed','Thu','Fri'], hours: ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00'] },
+        teachers: [], groups: [], subjects: [],
+        activities: [], dutyActivities: [], teacherLoads: {},
+        dutyTypes: [
+            { id: 0, name: 'Morning', slots: 3, days: [0,1,2,3,4] },
+            { id: 1, name: 'Lunch', slots: 2, days: [0,1,2,3,4] },
+            { id: 2, name: 'Evening', slots: 2, days: [0,1,2,3] },
+            { id: 3, name: 'Weekend', slots: 1, days: [4] }
+        ]
+    };
+}
+
+async function init() {
+    const defaultData = await fetchDefaultData();
+    const saved = loadState();
+    const state = saved || defaultData || getDefaultState();
+    if (!saved) saveState(state);
+
+    const core = new SmartCore();
+    const sync = new SyncEngine();
+    const dutyEng = new DutyEngine(state, core.auditLog);
+    const assignEng = new AssignmentEngine(state, core.auditLog);
+
+    let currentPanel = 'dashboard';
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    // Register with audit
+    const registeredAudit = loadAudit();
+    core.auditLog = registeredAudit;
+    saveAudit(core.auditLog);
+
+    // === NAVIGATION ===
+    $$('.nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            $$('.nav-item').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const panel = btn.dataset.panel;
+            $$('.panel').forEach(p => p.classList.remove('active'));
+            $(`#panel-${panel}`).classList.add('active');
+            currentPanel = panel;
+            renderCurrent();
+        });
+    });
+
+    // === STATUS BAR ===
+    const statusDot = $('#status-indicator');
+    const statusText = $('#status-text');
+    const auditBadge = $('#audit-count');
+    const lbStatus = $('#lb-status');
+
+    function updateStatus() {
+        const online = sync.isOnline();
+        statusDot.className = 'status-dot ' + (online ? 'online' : 'offline');
+        statusText.textContent = online ? 'Online' : 'Offline Mode';
+        auditBadge.textContent = core.getAuditCount() + ' decisions';
+        lbStatus.textContent = online ? 'Ready · Online' : 'Ready · Offline';
+    }
+    sync.onChange(() => updateStatus());
+    updateStatus();
+
+    // === RENDER FUNCTIONS ===
+    function renderDashboard() {
+        $('#stat-teachers').textContent = state.teachers.length;
+        $('#stat-groups').textContent = state.groups.length;
+        $('#stat-activities').textContent = (state.activities || []).length;
+        $('#stat-duties').textContent = (state.dutyActivities || []).length;
+        $('#stat-constraints').textContent = state.teachers.length * 2;
+        $('#stat-audit').textContent = core.getAuditCount();
+
+        const loads = state.teacherLoads || {};
+        const maxLoad = Math.max(...Object.values(loads), 1);
+        const container = $('#fairness-chart');
+        container.innerHTML = '';
+        state.teachers.forEach(t => {
+            const load = loads[t.id] || 0;
+            const pct = maxLoad > 0 ? Math.round((load / maxLoad) * 100) : 0;
+            const bar = document.createElement('div');
+            bar.className = 'fbar';
+            bar.innerHTML = `<span class="fbar-name">${t.name}</span><div class="fbar-track"><div class="fbar-fill" style="width:${pct}%"></div></div><span class="fbar-pct">${pct}%</span>`;
+            container.appendChild(bar);
+        });
+    }
+
+    function renderTeachers() {
+        const tbody = $('#teachers-table tbody');
+        tbody.innerHTML = '';
+        state.teachers.forEach((t, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${t.id}</td><td>${t.name}</td><td>${t.subject || '-'}</td><td>${state.teacherLoads?.[t.id] || 0}</td><td>${state.teacherLoads?.[t.id] || 0}</td><td><button class="del-btn" data-id="${t.id}">✕</button></td>`;
+            tr.querySelector('.del-btn').addEventListener('click', () => {
+                state.teachers = state.teachers.filter(t2 => t2.id !== t.id);
+                saveState(state);
+                renderAll();
+            });
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderGroups() {
+        const tbody = $('#groups-table tbody');
+        tbody.innerHTML = '';
+        state.groups.forEach(g => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${g.id}</td><td>${g.name}</td><td>${g.size || '-'}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderSubjects() {
+        const tbody = $('#subjects-table tbody');
+        tbody.innerHTML = '';
+        state.subjects.forEach(s => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${s.id}</td><td>${s.name}</td><td>${s.weeklyHours || 0}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderDuty() {
+        const cards = $('#duty-type-cards');
+        cards.innerHTML = '';
+        state.dutyTypes.forEach(dt => {
+            const card = document.createElement('div');
+            card.className = 'duty-card';
+            card.innerHTML = `<h4>${dt.name}</h4><span>${dt.slots} slots × ${dt.days.length} days = ${dt.slots * dt.days.length} total</span>`;
+            cards.appendChild(card);
+        });
+
+        const grid = $('#duty-roster-table');
+        grid.innerHTML = '';
+        if (state._dutyResult) {
+            state._dutyResult.days.forEach(day => {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'duty-day';
+                dayDiv.innerHTML = `<h4>${day.name}</h4>`;
+                day.slots.forEach(sl => {
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = 'duty-slot';
+                    slotDiv.innerHTML = `<span class="slot-type">${sl.type}</span><span class="slot-teacher">${sl.teacher_name}</span>`;
+                    dayDiv.appendChild(slotDiv);
+                });
+                grid.appendChild(dayDiv);
+            });
+        } else {
+            grid.innerHTML = '<p style="color:var(--text2)">Click "Generate Duty Roster" to create.</p>';
+        }
+    }
+
+    function renderAssignment() {
+        const tbody = $('#assignment-table tbody');
+        tbody.innerHTML = '';
+        (state._assignResult || []).forEach(a => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${a.subject}</td><td>${a.teacher}</td><td>${a.group}</td><td>${a.hours}</td><td>${a.loadPct}%</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderSchedule() {
+        const select = $('#schedule-group-select');
+        select.innerHTML = '';
+        state.groups.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.name;
+            select.appendChild(opt);
+        });
+        select.onchange = () => renderScheduleGrid();
+        renderScheduleGrid();
+    }
+
+    function renderScheduleGrid() {
+        const gid = parseInt($('#schedule-group-select').value) || 0;
+        const days = state.school.days;
+        const hours = state.school.hours;
+        const grid = $('#schedule-grid');
+        grid.innerHTML = '';
+        grid.style.gridTemplateColumns = `80px repeat(${days.length},1fr)`;
+
+        const hdr1 = document.createElement('div');
+        hdr1.className = 'sg-cell sg-header';
+        hdr1.textContent = '';
+        grid.appendChild(hdr1);
+        days.forEach(d => {
+            const h = document.createElement('div');
+            h.className = 'sg-cell sg-header';
+            h.textContent = d;
+            grid.appendChild(h);
+        });
+
+        const allActs = [...(state.activities || []), ...(state.dutyActivities || [])];
+        const tName = id => state.teachers.find(t => t.id === id)?.name || '';
+        const subName = (a, tid) => {
+            const t = state.teachers.find(t2 => t.id === tid);
+            return t?.subject || a.name;
+        };
+
+        hours.forEach((h, hIdx) => {
+            const timeCell = document.createElement('div');
+            timeCell.className = 'sg-cell sg-time';
+            timeCell.textContent = h;
+            grid.appendChild(timeCell);
+
+            days.forEach((d, dIdx) => {
+                const cell = document.createElement('div');
+                cell.className = 'sg-cell';
+                const act = allActs.find(a => a.student_group === gid && a.day === dIdx && a.hour === hIdx);
+                if (act) {
+                    const isDuty = act.activity_type > 0;
+                    cell.classList.add(isDuty ? 'sg-duty' : 'sg-subject');
+                    cell.textContent = act.name;
+                    cell.title = tName(act.teacher);
+                }
+                grid.appendChild(cell);
+            });
+        });
+    }
+
+    function renderAudit() {
+        const container = $('#audit-log');
+        container.innerHTML = '';
+        const log = core.getAuditTrail(200);
+        if (log.length === 0) {
+            container.innerHTML = '<p style="color:var(--text2)">No audit entries yet.</p>';
+            return;
+        }
+        log.forEach(entry => {
+            const div = document.createElement('div');
+            div.className = 'audit-entry';
+            const rule = entry.matchedRule || entry.action || 'unknown';
+            const detail = entry.input ? `"${entry.input}"` : JSON.stringify(entry).substring(0, 200);
+            div.innerHTML = `<span class="a-time">${entry.timestamp || entry.ts || ''}</span><br><span class="a-rule">[${rule}]</span><br><span class="a-detail">${detail}</span>`;
+            container.appendChild(div);
+        });
+    }
+
+    function renderRules() {
+        const container = $('#rules-list');
+        container.innerHTML = '';
+        core.getRules().forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'rule-card';
+            div.innerHTML = `<span class="rule-priority">P${r.prio}</span><h4>${r.name}</h4><p>${r.desc}</p>`;
+            container.appendChild(div);
+        });
+    }
+
+    function renderExportPreview() {
+        const exporter = new FETExporter(state);
+        $('#xml-preview').textContent = exporter.buildXML().substring(0, 5000) + '\n... (truncated)';
+    }
+
+    function renderCurrent() {
+        switch (currentPanel) {
+            case 'dashboard': renderDashboard(); break;
+            case 'teachers': renderTeachers(); break;
+            case 'groups': renderGroups(); break;
+            case 'subjects': renderSubjects(); break;
+            case 'duty': renderDuty(); break;
+            case 'assignment': renderAssignment(); break;
+            case 'schedule': renderSchedule(); break;
+            case 'audit': renderAudit(); break;
+            case 'export': renderExportPreview(); break;
+            case 'rules': renderRules(); break;
+        }
+        updateStatus();
+    }
+
+    function renderAll() {
+        renderDashboard();
+        renderTeachers();
+        renderGroups();
+        renderSubjects();
+        renderDuty();
+        renderAssignment();
+        renderSchedule();
+        renderAudit();
+        renderRules();
+        renderExportPreview();
+        updateStatus();
+    }
+
+    // === ACTIONS ===
+    function generateTimetable() {
+        const assignRes = assignEng.autoAssign();
+        state._assignResult = assignRes;
+        const dutyRes = dutyEng.generate();
+        state._dutyResult = dutyRes;
+        saveState(state);
+        core.auditLog.push({ action: 'generate-all', ts: new Date().toISOString() });
+        saveAudit(core.auditLog);
+        renderAll();
+        return { assigned: assignRes.length, duties: dutyRes.days.reduce((s, d) => s + d.slots.length, 0) };
+    }
+
+    function exportFET() {
+        const exporter = new FETExporter(state);
+        exporter.downloadXML(`${state.school.name || 'school'}_timetable.fet`);
+        core.auditLog.push({ action: 'export-fet-xml', ts: new Date().toISOString() });
+        saveAudit(core.auditLog);
+        updateStatus();
+    }
+
+    function exportCSV() {
+        const exporter = new FETExporter(state);
+        exporter.downloadCSV(`${state.school.name || 'school'}_timetable.csv`);
+        core.auditLog.push({ action: 'export-fet-csv', ts: new Date().toISOString() });
+        saveAudit(core.auditLog);
+        updateStatus();
+    }
+
+    function addTeacher(name, subject) {
+        const id = state.teachers.length;
+        state.teachers.push({ id, name, subject: subject || null });
+        saveState(state);
+        renderAll();
+        return state.teachers[state.teachers.length - 1];
+    }
+
+    function doReset() {
+        if (!confirm('Reset all data? This cannot be undone.')) return;
+        localStorage.removeItem(APP_KEY);
+        localStorage.removeItem(AUDIT_KEY);
+        const fresh = loadState() || getDefaultState();
+        Object.assign(state, fresh);
+        saveState(state);
+        core.auditLog = [];
+        saveAudit(core.auditLog);
+        renderAll();
+    }
+
+    function doSync() {
+        const result = sync.flushQueue('/api/sync');
+        sync.saveToStorage(APP_KEY, state);
+        lbStatus.textContent = `Sync: ${result.flushed} flushed, ${result.remaining} pending`;
+        updateStatus();
+    }
+
+    // === CHAT ===
+    const chatMessages = $('#chat-messages');
+    const chatInput = $('#chat-input');
+    const btnSend = $('#btn-chat-send');
+
+    function addChatMsg(text, who, isError) {
+        const div = document.createElement('div');
+        div.className = 'chat-msg ' + who + (isError ? ' error' : '');
+        div.textContent = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function handleChat() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+        addChatMsg(text, 'user');
+        chatInput.value = '';
+
+        const ctx = { state };
+        const result = core.execute(text, ctx);
+        saveAudit(core.auditLog);
+
+        let output = result.output;
+        if (typeof output === 'object' && output !== null) {
+            try {
+                const parsed = JSON.parse(output);
+                if (parsed.action === 'add-teacher') {
+                    const t = addTeacher(parsed.name, parsed.subject);
+                    output = `Added teacher "${t.name}" (${t.subject}) — ID ${t.id}`;
+                } else if (parsed.action === 'generate') {
+                    const r = generateTimetable();
+                    output = `Timetable generated: ${r.assigned} assignments, ${r.duties} duty slots.`;
+                } else if (parsed.action === 'export-fet') {
+                    exportFET();
+                    output = 'FET XML exported. Check downloads.';
+                } else if (parsed.action === 'assign') {
+                    const res = assignEng.autoAssign();
+                    state._assignResult = res;
+                    saveState(state);
+                    renderAll();
+                    output = `Auto-assigned ${res.length} subject-group pairs.`;
+                } else if (parsed.action === 'duty') {
+                    const res = dutyEng.generate();
+                    state._dutyResult = res;
+                    saveState(state);
+                    renderAll();
+                    output = `Duty roster generated. Fairness: ${dutyEng.getFairnessIndex()}%`;
+                } else if (parsed.action === 'reset') {
+                    doReset();
+                    output = 'All data reset.';
+                } else if (parsed.action === 'sync') {
+                    doSync();
+                    output = 'Sync attempted.';
+                }
+            } catch {
+                // not JSON, treat as text
+            }
+        }
+
+        addChatMsg(output, 'bot', !result.success);
+        renderAudit();
+        updateStatus();
+    }
+
+    btnSend.addEventListener('click', handleChat);
+    chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleChat(); });
+
+    // === BUTTON BINDINGS ===
+    $('#btn-generate').addEventListener('click', () => {
+        generateTimetable();
+        addChatMsg('Timetable generated.', 'bot');
+    });
+    $('#btn-export-fet').addEventListener('click', exportFET);
+    $('#btn-export-xml').addEventListener('click', exportFET);
+    $('#btn-export-csv').addEventListener('click', exportCSV);
+    $('#btn-sync').addEventListener('click', doSync);
+    $('#btn-reset').addEventListener('click', doReset);
+    $('#btn-add-teacher').addEventListener('click', () => {
+        const name = prompt('Teacher name:');
+        if (!name) return;
+        const subject = prompt('Subject (optional):') || '';
+        addTeacher(name, subject || null);
+    });
+    $('#btn-add-group').addEventListener('click', () => {
+        const name = prompt('Group name:');
+        if (!name) return;
+        const size = parseInt(prompt('Size:') || '30');
+        state.groups.push({ id: state.groups.length, name, size });
+        saveState(state);
+        renderAll();
+    });
+    $('#btn-add-subject').addEventListener('click', () => {
+        const name = prompt('Subject name:');
+        if (!name) return;
+        const hrs = parseInt(prompt('Weekly hours:') || '4');
+        state.subjects.push({ id: state.subjects.length, name, weeklyHours: hrs });
+        saveState(state);
+        renderAll();
+    });
+    $('#btn-gen-duty').addEventListener('click', () => {
+        const res = dutyEng.generate();
+        state._dutyResult = res;
+        saveState(state);
+        renderAll();
+        addChatMsg(`Duty generated. Fairness: ${dutyEng.getFairnessIndex()}%`, 'bot');
+    });
+    $('#btn-gen-assignment').addEventListener('click', () => {
+        const res = assignEng.autoAssign();
+        state._assignResult = res;
+        saveState(state);
+        renderAll();
+        addChatMsg(`Assigned ${res.length} pairs. Fairness: ${assignEng.getFairnessIndex()}%`, 'bot');
+    });
+    $('#btn-manual-assign').addEventListener('click', () => {
+        addChatMsg('Manual assignment: use chat. Example: "assign Math to Ahmed for 10A"', 'bot');
+    });
+
+    // === SERVICE WORKER ===
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    // === INIT ===
+    renderAll();
+    addChatMsg('Smart FET Assistant ready. Type "help" for commands.', 'bot');
+}
+
+init();
+
+
+</script>
 </body>
 </html>
