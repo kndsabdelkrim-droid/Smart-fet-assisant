@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart FET Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-container">
+
+    <header id="hd" class="top-bar">
+        <div class="brand">
+            <span class="brand-icon">⚡</span>
+            <h1>Smart FET Assistant</h1>
+            <span class="badge">Deterministic · Zero-Error · Offline</span>
+        </div>
+        <div class="actions">
+            <button class="btn btn-primary" id="btn-generate">Generate Timetable</button>
+            <button class="btn btn-success" id="btn-export-fet">Export FET XML</button>
+            <button class="btn btn-outline" id="btn-sync">Sync</button>
+            <button class="btn btn-danger" id="btn-reset">Reset</button>
+        </div>
+        <div class="status-bar">
+            <span id="status-indicator" class="status-dot offline"></span>
+            <span id="status-text">Offline Mode</span>
+            <span id="audit-count" class="audit-badge">0 decisions</span>
+        </div>
+    </header>
+
+    <nav id="nv" class="side-nav">
+        <div class="nav-section">
+            <h3>Modules</h3>
+            <button class="nav-item active" data-panel="dashboard">Dashboard</button>
+            <button class="nav-item" data-panel="teachers">Teachers</button>
+            <button class="nav-item" data-panel="groups">Groups</button>
+            <button class="nav-item" data-panel="subjects">Subjects</button>
+            <button class="nav-item" data-panel="duty">Duty Roster</button>
+            <button class="nav-item" data-panel="assignment">Assignment</button>
+            <button class="nav-item" data-panel="schedule">Timetable</button>
+            <button class="nav-item" data-panel="audit">Audit Log</button>
+            <button class="nav-item" data-panel="export">Export</button>
+        </div>
+        <div class="nav-section">
+            <h3>AI Assistant</h3>
+            <button class="nav-item" data-panel="assistant">Chat</button>
+            <button class="nav-item" data-panel="rules">Rules</button>
+        </div>
+        <div class="nav-footer">
+            <span class="version">v1.0.0</span>
+            <span class="engine">Deterministic Core</span>
+        </div>
+    </nav>
+
+    <div id="lb" class="bottom-bar">
+        <span id="lb-status">Ready</span>
+    </div>
+
+    <main id="v" class="main-view">
+
+        <section id="panel-dashboard" class="panel active">
+            <h2>Dashboard</h2>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Teachers</span>
+                    <span class="stat-value" id="stat-teachers">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Groups</span>
+                    <span class="stat-value" id="stat-groups">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Activities</span>
+                    <span class="stat-value" id="stat-activities">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Duty Slots</span>
+                    <span class="stat-value" id="stat-duties">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">FET Constraints</span>
+                    <span class="stat-value" id="stat-constraints">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Audit Entries</span>
+                    <span class="stat-value" id="stat-audit">0</span>
+                </div>
+            </div>
+            <div class="fairness-panel">
+                <h3>Fairness Index</h3>
+                <div id="fairness-chart" class="fairness-bars"></div>
+            </div>
+        </section>
+
+        <section id="panel-teachers" class="panel">
+            <h2>Teachers</h2>
+            <div class="toolbar">
+                <button class="btn btn-primary btn-sm" id="btn-add-teacher">+ Add</button>
+            </div>
+            <table class="data-table" id="teachers-table">
+                <thead><tr><th>ID</th><th>Name</th><th>Subject</th><th>Duty Count</th><th>Hours</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="panel-groups" class="panel">
+            <h2>Student Groups</h2>
+            <div class="toolbar">
+                <button class="btn btn-primary btn-sm" id="btn-add-group">+ Add</button>
+            </div>
+            <table class="data-table" id="groups-table">
+                <thead><tr><th>ID</th><th>Name</th><th>Size</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="panel-subjects" class="panel">
+            <h2>Subjects</h2>
+            <div class="toolbar">
+                <button class="btn btn-primary btn-sm" id="btn-add-subject">+ Add</button>
+            </div>
+            <table class="data-table" id="subjects-table">
+                <thead><tr><th>ID</th><th>Name</th><th>Weekly Hours</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="panel-duty" class="panel">
+            <h2>Duty Roster</h2>
+            <div class="duty-summary">
+                <div class="duty-type-cards" id="duty-type-cards"></div>
+            </div>
+            <div class="toolbar">
+                <button class="btn btn-primary" id="btn-gen-duty">Generate Duty Roster</button>
+                <span class="toolbar-hint">Fair rotation · No teacher exceeds max slots</span>
+            </div>
+            <div id="duty-roster-table" class="duty-grid"></div>
+        </section>
+
+        <section id="panel-assignment" class="panel">
+            <h2>Subject Assignment</h2>
+            <div class="toolbar">
+                <button class="btn btn-primary" id="btn-gen-assignment">Auto-Assign</button>
+                <button class="btn btn-outline" id="btn-manual-assign">Manual</button>
+                <span class="toolbar-hint">Balanced by teacher load</span>
+            </div>
+            <table class="data-table" id="assignment-table">
+                <thead><tr><th>Subject</th><th>Teacher</th><th>Group</th><th>Hours</th><th>Load %</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="panel-schedule" class="panel">
+            <h2>Timetable</h2>
+            <div class="toolbar">
+                <select id="schedule-group-select" class="form-select"></select>
+            </div>
+            <div id="schedule-grid" class="schedule-grid"></div>
+        </section>
+
+        <section id="panel-audit" class="panel">
+            <h2>Audit Log</h2>
+            <div class="toolbar">
+                <span class="toolbar-hint">Every decision is logged. Immutable.</span>
+            </div>
+            <div id="audit-log" class="audit-log"></div>
+        </section>
+
+        <section id="panel-export" class="panel">
+            <h2>Export to FET</h2>
+            <div class="export-options">
+                <div class="export-card">
+                    <h3>FET XML (v5)</h3>
+                    <p>Standard FET 5.x format. Includes teachers, groups, activities, duty, constraints.</p>
+                    <button class="btn btn-success" id="btn-export-xml">Download .fet XML</button>
+                </div>
+                <div class="export-card">
+                    <h3>FET CSV (Legacy)</h3>
+                    <p>Comma-separated for FET 4.x compatibility.</p>
+                    <button class="btn btn-outline" id="btn-export-csv">Download CSV</button>
+                </div>
+            </div>
+            <div class="preview-box">
+                <h3>XML Preview</h3>
+                <pre id="xml-preview"></pre>
+            </div>
+        </section>
+
+        <section id="panel-assistant" class="panel">
+            <h2>Smart Assistant</h2>
+            <div class="chat-container">
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input">
+                    <input type="text" id="chat-input" placeholder="Type a command... (e.g. assign, duty, export, balance)">
+                    <button class="btn btn-primary" id="btn-chat-send">Send</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="panel-rules" class="panel">
+            <h2>Active Rules</h2>
+            <div id="rules-list" class="rules-list"></div>
+        </section>
+
+    </main>
+
+    <footer id="cidf" class="bottom-footer">
+        <span>Smart FET Assistant · Deterministic Engine · v1.0.0</span>
+    </footer>
+
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
