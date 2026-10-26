@@ -31,29 +31,35 @@ pre{background:var(--s);padding:10px;max-height:380px;overflow:auto;direction:lt
 <header><b>⚡ مساعد الجداول الذكي</b><div class="bar" style="margin:0"><button class="btn" id="gen">توليد الجدول</button><button class="btn r" id="rst">إعادة تعيين</button></div></header>
 <nav id="nav"></nav><main id="main"></main><div id="modal"></div>
 <script>
-const K='sfet3',$=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const TYPES=['قسم','مخبر','ورشة','ساحة','قاعة إعلام'];
-const DEF={school:{name:'مدرستي',year:'2025-2026',days:['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'],hours:['08:00','09:00','10:00','11:00','13:00','14:00','15:00','16:00'],maxG:8,maxT:8},closed:[],
-teachers:[['أحمد محمد','رياضيات'],['يوسف بن علي','رياضيات'],['فاطمة علي','فيزياء'],['خالد عمر','كيمياء'],['سارة حسن','علوم طبيعية'],['عمر يوسف','لغة عربية'],['نادية بوزيد','لغة عربية'],['ليلى كمال','إنجليزية'],['كريم حداد','إنجليزية'],['حسن طارق','تاريخ'],['منى سامي','جغرافيا']].map((x,i)=>({id:i,name:x[0],subject:x[1],off:[]})),
-groups:[['10أ',30],['10ب',28],['11أ',32],['11ب',29],['12أ',31],['12ب',27]].map((x,i)=>({id:i,name:x[0],size:x[1],room:'قسم '+(i+1)})),
-subjects:[['رياضيات',5,'','نعم'],['فيزياء',4,'مخبر','نعم'],['كيمياء',4,'مخبر','نعم'],['علوم طبيعية',4,'مخبر','نعم'],['لغة عربية',5,'','نعم'],['إنجليزية',5,'',''],['تاريخ',3,'',''],['جغرافيا',3,'','']].map((x,i)=>({id:i,name:x[0],weeklyHours:x[1],room:x[2],am:x[3]})),
-rooms:[1,2,3,4,5,6].map(i=>({id:i-1,name:'قسم '+i,type:'قسم',cap:40})).concat([1,2,3].map(i=>({id:5+i,name:'مخبر '+i,type:'مخبر',cap:36}))),
+const K='sfet4',$=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const BASE='قاعة درس',TYPES=[BASE,'مخبر','قاعة إعلام','ساحة','ورشة'];
+const SUBS=[['اللغة العربية',6,'','نعم'],['الرياضيات',5,'','نعم'],['اللغة الفرنسية',4,'','نعم'],['اللغة الإنجليزية',3,'',''],['التربية الإسلامية',2,'',''],['التربية المدنية',1,'',''],['التاريخ والجغرافيا',3,'',''],['العلوم الطبيعية',2,'مخبر','نعم'],['العلوم الفيزيائية',2,'مخبر','نعم'],['التربية التشكيلية',1,'',''],['التربية الموسيقية',1,'',''],['التربية البدنية',2,'ساحة',''],['المعلوماتية',1,'قاعة إعلام','']];
+function mkDef(){const LV=['1م','2م','3م','4م'],hrs={};SUBS.forEach(s=>hrs[s[0]]=s[1]);
+const levels=LV.map((n,i)=>({id:i,name:n,hours:Object.assign({},hrs)})),groups=[],rooms=[];
+LV.forEach(l=>[1,2].forEach(j=>{const id=groups.length;groups.push({id,name:l+j,size:30,level:l,room:'قاعة '+l+j});rooms.push({id,name:'قاعة '+l+j,type:BASE,cap:40})}));
+rooms.push({id:8,name:'مخبر العلوم',type:'مخبر',cap:40},{id:9,name:'مخبر الفيزياء',type:'مخبر',cap:40},{id:10,name:'قاعة الإعلام',type:'قاعة إعلام',cap:40},{id:11,name:'ساحة الرياضة',type:'ساحة',cap:100});
+const teachers=[];SUBS.forEach(s=>{const n=Math.ceil(s[1]*groups.length/18);for(let k=1;k<=n;k++)teachers.push({id:teachers.length,name:'أستاذ '+s[0]+' '+k,subject:s[0],off:[]})});
+return{school:{name:'مدرستي',year:'2025-2026',days:['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'],hours:['08:00','09:00','10:00','11:00','13:00','14:00','15:00','16:00'],maxG:8,maxT:8,contG:4,contT:4,strict:'نعم'},closed:[],
+levels,groups,rooms,teachers,subjects:SUBS.map((s,i)=>({id:i,name:s[0],room:s[2],am:s[3]})),
 dutyTypes:[{id:0,name:'حراسة الصباح',slots:3,days:[0,1,2,3,4]},{id:1,name:'حراسة الغداء',slots:2,days:[0,1,2,3,4]},{id:2,name:'حراسة المساء',slots:2,days:[0,1,2,3]},{id:3,name:'حراسة نهاية الأسبوع',slots:1,days:[4]}],
-acts:[],assign:[],duty:[],loads:{},bad:0};
+acts:[],assign:[],duty:[],loads:{},bad:0,fail:[]}}
+const DEF=mkDef();
 let S;try{S=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
-if(!S)S=JSON.parse(JSON.stringify(DEF));
+if(!S)S=mkDef();
 let tab='home',view='';
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
 const stale=()=>{S.acts=[];S.assign=[];S.duty=[];S.loads={};S.bad=0;save()};
 const nextId=a=>a.reduce((m,x)=>Math.max(m,x.id),-1)+1;
 const tn=id=>(S.teachers.find(t=>t.id===id)||{}).name||'',gn=id=>(S.groups.find(g=>g.id===id)||{}).name||'';
 const fair=v=>{if(!v.length)return 100;const m=v.reduce((a,b)=>a+b,0)/v.length;if(!m)return 100;const sd=Math.sqrt(v.reduce((a,x)=>a+(x-m)**2,0)/v.length);return Math.max(0,Math.round((1-sd/m)*1000)/10)};
-const TABS=[['home','لوحة التحكم'],['teachers','الأساتذة'],['groups','الأفواج'],['subjects','المواد'],['rooms','القاعات'],['settings','القيود والإعدادات'],['assign','التوزيع'],['duty','الحراسة'],['table','الجدول'],['export','التصدير']];
+const TABS=[['home','لوحة التحكم'],['teachers','الأساتذة'],['levels','المستويات'],['groups','الأقسام'],['subjects','المواد'],['rooms','القاعات'],['settings','القيود والإعدادات'],['assign','التوزيع'],['duty','الحراسة'],['table','الجدول'],['export','التصدير']];
 const LISTS={
+levels:{t:'المستويات',c:[['name','المستوى'],['cnt','عدد الأقسام'],['tot','الحصص الأسبوعية']],f:()=>[{k:'name',l:'اسم المستوى (مثل 1م)'}]},
 teachers:{t:'الأساتذة',c:[['name','الاسم'],['subject','المادة'],['off','أوقات غير متاحة']],f:()=>[{k:'name',l:'الاسم'},{k:'subject',l:'المادة',opts:S.subjects.map(s=>s.name)}]},
-groups:{t:'الأفواج',c:[['name','الاسم'],['size','عدد التلاميذ'],['room','القسم الأصلي']],f:()=>[{k:'name',l:'اسم الفوج'},{k:'size',l:'عدد التلاميذ',n:1},{k:'room',l:'القسم الأصلي',opts:S.rooms.filter(r=>r.type==='قسم').map(r=>r.name)}]},
-subjects:{t:'المواد',c:[['name','الاسم'],['weeklyHours','الساعات الأسبوعية'],['room','نوع القاعة'],['am','صباحاً']],f:()=>[{k:'name',l:'اسم المادة'},{k:'weeklyHours',l:'الساعات الأسبوعية',n:1},{k:'room',l:'نوع القاعة المطلوبة (فارغ = قسم)',opts:TYPES},{k:'am',l:'تفضيل الحصص الصباحية',opts:['نعم']}]},
+groups:{t:'الأقسام',c:[['name','القسم'],['level','المستوى'],['size','التلاميذ'],['room','القاعة المخصصة']],f:()=>[{k:'name',l:'اسم القسم (مثل 1م1)'},{k:'level',l:'المستوى',opts:S.levels.map(l=>l.name)},{k:'size',l:'عدد التلاميذ',n:1},{k:'room',l:'القاعة المخصصة',opts:S.rooms.filter(r=>r.type===BASE).map(r=>r.name)}]},
+subjects:{t:'المواد',c:[['name','الاسم'],['room','نوع القاعة'],['am','صباحاً']],f:()=>[{k:'name',l:'اسم المادة'},{k:'room',l:'نوع القاعة المطلوبة (فارغ = قاعة درس)',opts:TYPES},{k:'am',l:'تفضيل الحصص الصباحية',opts:['نعم']}]},
 rooms:{t:'القاعات',c:[['name','الاسم'],['type','النوع'],['cap','السعة']],f:()=>[{k:'name',l:'اسم القاعة'},{k:'type',l:'النوع',opts:TYPES},{k:'cap',l:'السعة (عدد المقاعد)',n:1}]}};
+const lvTot=l=>Object.values(l.hours||{}).reduce((a,b)=>a+(+b||0),0);
 function grid(title,set,ok){const m=$('#modal'),D=S.school.days,H=S.school.hours,cur=new Set(set);
 const dr=()=>{m.innerHTML='<div class="box" style="width:auto;max-width:94vw;overflow:auto"><h3>'+title+'</h3><p class="msg">انقر على خانة لتبديلها (الأحمر = غير متاح). انقر على اسم اليوم لتبديل اليوم كاملاً.</p><table class="tt"><tr><th></th>'+D.map((d,i)=>'<th data-d="'+i+'" style="cursor:pointer">'+esc(d)+'</th>').join('')+'</tr>'+H.map((x,hi)=>'<tr><th>'+esc(x)+'</th>'+D.map((d,di)=>'<td data-c="'+di+'_'+hi+'" style="cursor:pointer;background:'+(cur.has(di+'_'+hi)?'#ef5b6b':'transparent')+'"></td>').join('')+'</tr>').join('')+'</table><div class="bar" style="margin-top:12px"><button class="btn" id="ok">حفظ</button><button class="btn o" id="no">إلغاء</button></div></div>';
 m.classList.add('on');
@@ -67,24 +73,33 @@ $('#no').onclick=()=>m.classList.remove('on');
 $('#ok').onclick=()=>{const o={};fs.forEach((f,i)=>{let x=$('#f'+i).value.trim();if(f.n)x=Math.max(0,+x||0);o[f.k]=x});if(!o[fs[0].k]){$('#f0').focus();return}m.classList.remove('on');ok(o)}}
 
 function assign(){const load={};S.teachers.forEach(t=>load[t.id]=0);S.acts=[];S.assign=[];let id=1;
-S.groups.forEach(g=>S.subjects.forEach(sub=>{let c=S.teachers.filter(t=>t.subject===sub.name);if(!c.length)c=S.teachers.slice();if(!c.length)return;
-c.sort((a,b)=>load[a.id]-load[b.id]||a.id-b.id);const t=c[0],h=+sub.weeklyHours||0;
-for(let i=0;i<h;i++)S.acts.push({id:id++,sub:sub.name,t:t.id,g:g.id,d:-1,h:-1});
-load[t.id]+=h;S.assign.push({sub:sub.name,t:t.id,g:g.id,h})}));S.loads=load}
+S.groups.forEach(g=>{const lv=S.levels.find(l=>l.name===g.level);if(!lv)return;S.subjects.forEach(sub=>{const h=+(lv.hours||{})[sub.name]||0;if(!h)return;let c=S.teachers.filter(t=>t.subject===sub.name);if(!c.length)c=S.teachers.slice();if(!c.length)return;
+c.sort((a,b)=>load[a.id]-load[b.id]||a.id-b.id);const t=c[0];
+for(let i=0;i<h;i++)S.acts.push({id:id++,sub:sub.name,t:t.id,g:g.id,d:-1,h:-1,r:''});
+load[t.id]+=h;S.assign.push({sub:sub.name,t:t.id,g:g.id,h})})});S.loads=load}
 
-function sched(){const sc=S.school,D=sc.days.length,H=sc.hours.length,cl=new Set(S.closed),am=sc.hours.filter(x=>x<'12:00').length,sj={};S.subjects.forEach(s=>sj[s.name]=s);
-const run=ord=>{const tb={},gb={},rb={},dc={},tc={};let bad=0;S.acts.forEach(a=>{a.d=-1;a.h=-1;a.r=''});
-ord.forEach(a=>{const t=S.teachers.find(x=>x.id===a.t),g=S.groups.find(x=>x.id===a.g),off=new Set(t.off||[]),sb=sj[a.sub]||{},ty=sb.room||'قسم';let best=null,bs=1e9;
-for(let d=0;d<D;d++)for(let h=0;h<H;h++){const k=d+'_'+h;if(cl.has(k)||off.has(k)||tb[a.t+'_'+k]||gb[a.g+'_'+k])continue;
-if((dc[a.g+'_'+d]||0)>=sc.maxG||(tc[a.t+'_'+d]||0)>=sc.maxT)continue;
-const rs=S.rooms.filter(r=>r.type===ty&&r.cap>=g.size&&!rb[r.name+'_'+k]);if(!rs.length)continue;
-const rm=rs.find(r=>r.name===g.room)||rs[0],same=S.acts.filter(x=>x.g===a.g&&x.sub===a.sub&&x.d===d).length,s=same*100+(dc[a.g+'_'+d]||0)*4+h+(sb.am&&h>=am?50:0);
-if(s<bs){bs=s;best=[d,h,rm.name]}}
-if(best){const k=best[0]+'_'+best[1];a.d=best[0];a.h=best[1];a.r=best[2];tb[a.t+'_'+k]=1;gb[a.g+'_'+k]=1;rb[best[2]+'_'+k]=1;dc[a.g+'_'+best[0]]=(dc[a.g+'_'+best[0]]||0)+1;tc[a.t+'_'+best[0]]=(tc[a.t+'_'+best[0]]||0)+1}else bad++});return bad};
+function sched(){const sc=S.school,D=sc.days.length,H=sc.hours.length,cl=new Set(S.closed),am=sc.hours.filter(x=>x<'12:00').length,sj={},tot={};S.subjects.forEach(s=>sj[s.name]=s);S.acts.forEach(a=>{const k=a.g+'_'+a.sub;tot[k]=(tot[k]||0)+1});
+if(!S.acts.length){S.bad=0;S.fail=[];return}
+const ss=h=>h<am?0:1,strict=sc.strict!=='لا';
+const len=(m,id,d,h)=>{let n=1,x=h-1;while(x>=0&&ss(x)===ss(h)&&m[id+'_'+d+'_'+x]){n++;x--}x=h+1;while(x<H&&ss(x)===ss(h)&&m[id+'_'+d+'_'+x]){n++;x++}return n};
+const near=(m,id,d,h)=>{let b=99;for(let x=0;x<H;x++)if(m[id+'_'+d+'_'+x])b=Math.min(b,Math.abs(x-h));return b};
+const run=ord=>{const tb={},gb={},rb={},dc={},tc={},sn={};let bad=0;S.acts.forEach(a=>{a.d=-1;a.h=-1;a.r=''});
+ord.forEach(a=>{const t=S.teachers.find(x=>x.id===a.t),g=S.groups.find(x=>x.id===a.g),off=new Set(t.off||[]),sb=sj[a.sub]||{},ty=sb.room||BASE,T=tot[a.g+'_'+a.sub],cap=Math.ceil(T/D);let best=null,bs=1e9;
+for(let d=0;d<D;d++){if((sn[a.g+'_'+a.sub+'_'+d]||0)>=cap||(dc[a.g+'_'+d]||0)>=sc.maxG||(tc[a.t+'_'+d]||0)>=sc.maxT)continue;
+const adj=T<D?((sn[a.g+'_'+a.sub+'_'+(d-1)]||0)+(sn[a.g+'_'+a.sub+'_'+(d+1)]||0))*25:0;
+for(let h=0;h<H;h++){const k=d+'_'+h;if(cl.has(k)||off.has(k)||tb[a.t+'_'+k]||gb[a.g+'_'+k])continue;
+if(len(gb,a.g,d,h)>sc.contG||len(tb,a.t,d,h)>sc.contT)continue;
+let rs=S.rooms.filter(r=>r.type===ty&&r.cap>=g.size&&!rb[r.name+'_'+k]);
+if(ty===BASE&&strict&&g.room&&S.rooms.some(r=>r.name===g.room))rs=rs.filter(r=>r.name===g.room);if(!rs.length)continue;
+const ng=near(gb,a.g,d,h),nt=near(tb,a.t,d,h),
+s=(dc[a.g+'_'+d]||0)*4+adj+(ng===99?h:(ng-1)*6)+(nt===99?(tc[a.t+'_'+d]?0:3):(nt-1)*2)+(sb.am&&h>=am?50:0);
+if(s<bs){bs=s;best=[d,h,(rs.find(r=>r.name===g.room)||rs[0]).name]}}}
+if(best){const k=best[0]+'_'+best[1];a.d=best[0];a.h=best[1];a.r=best[2];tb[a.t+'_'+k]=1;gb[a.g+'_'+k]=1;rb[best[2]+'_'+k]=1;dc[a.g+'_'+best[0]]=(dc[a.g+'_'+best[0]]||0)+1;tc[a.t+'_'+best[0]]=(tc[a.t+'_'+best[0]]||0)+1;const q=a.g+'_'+a.sub+'_'+best[0];sn[q]=(sn[q]||0)+1}else bad++});return bad};
 const ld=a=>S.acts.filter(x=>x.t===a.t).length,first=S.acts.slice().sort((x,y)=>((sj[y.sub]||{}).room?1:0)-((sj[x.sub]||{}).room?1:0)||ld(y)-ld(x)||x.id-y.id);
 let sd=7,rnd=()=>(sd=(sd*1103515245+12345)%2147483648)/2147483648,bb=1e9,snap=null;
-for(let i=0;i<60&&bb>0;i++){const ord=i?first.slice().sort(()=>rnd()-.5):first,b=run(ord);if(b<bb){bb=b;snap=S.acts.map(a=>[a.d,a.h,a.r])}}
-S.acts.forEach((a,i)=>{a.d=snap[i][0];a.h=snap[i][1];a.r=snap[i][2]});S.bad=bb}
+for(let i=0;i<80&&bb>0;i++){const ord=i?first.slice().sort(()=>rnd()-.5):first,b=run(ord);if(b<bb){bb=b;snap=S.acts.map(a=>[a.d,a.h,a.r])}}
+S.acts.forEach((a,i)=>{a.d=snap[i][0];a.h=snap[i][1];a.r=snap[i][2]});S.bad=bb;
+const f={};S.acts.filter(a=>a.d<0).forEach(a=>{const k=gn(a.g)+' - '+a.sub;f[k]=(f[k]||0)+1});S.fail=Object.keys(f).slice(0,6).map(k=>k+' ('+f[k]+')')}
 
 function duty(){const ld={};S.teachers.forEach(t=>ld[t.id]=0);S.dutyLoad=ld;
 S.duty=S.school.days.map((dn,di)=>{const used=new Set(),slots=[];
@@ -99,15 +114,17 @@ function nav(){$('#nav').innerHTML=TABS.map(t=>'<button data-t="'+t[0]+'" class=
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()})}
 
 function home(){const placed=S.acts.filter(a=>a.d>=0).length,v=S.teachers.map(t=>S.loads[t.id]||0),mx=Math.max.apply(null,v.concat([1]));
-$('#main').innerHTML='<h2>لوحة التحكم</h2><div class="cards">'+[['الأساتذة',S.teachers.length],['الأفواج',S.groups.length],['المواد',S.subjects.length],['الحصص',S.acts.length],['الحصص الموزعة',placed],['خانات الحراسة',S.duty.reduce((s,d)=>s+d.slots.length,0)]].map(c=>'<div class="card">'+c[0]+'<b>'+c[1]+'</b></div>').join('')+'</div>'+
-(S.acts.length?'':'<p class="msg">اضغط «توليد الجدول» في الأعلى لإنشاء التوزيع والجدول والحراسة.</p>')+
+$('#main').innerHTML='<h2>لوحة التحكم</h2><div class="cards">'+[['الأساتذة',S.teachers.length],['الأفواج',S.groups.length],['المستويات',S.levels.length],['المواد',S.subjects.length],['القاعات',S.rooms.length],['الحصص',S.acts.length],['الحصص الموزعة',placed],['خانات الحراسة',S.duty.reduce((s,d)=>s+d.slots.length,0)]].map(c=>'<div class="card">'+c[0]+'<b>'+c[1]+'</b></div>').join('')+'</div>'+
+(S.acts.length?'':'<p class="msg">اضغط «توليد الجدول» في الأعلى لإنشاء التوزيع والجدول والحراسة.</p>')+(S.groups.length>S.rooms.filter(r=>r.type===BASE).length?'<p class="msg">عدد الأقسام ('+S.groups.length+') أكبر من عدد قاعات الدرس ('+S.rooms.filter(r=>r.type===BASE).length+'): ستتقاسم بعض الأقسام القاعات، وقد يتعذر التوزيع مع القاعة المخصصة الإلزامية.</p>':'')+(S.groups.some(g=>!S.levels.some(l=>l.name===g.level))?'<p class="msg">بعض الأقسام بلا مستوى صحيح، فلن تُوزَّع لها حصص.</p>':'')+
 '<h3>عدالة توزيع الحصص: '+fair(v)+'%</h3>'+S.teachers.map((t,i)=>'<div class="fb"><span>'+esc(t.name)+'</span><i><u style="width:'+Math.round(v[i]/mx*100)+'%"></u></i><span>'+v[i]+' س</span></div>').join('')}
 
 function list(key){const L=LISTS[key],a=S[key];
 $('#main').innerHTML='<h2>'+L.t+'</h2><div class="bar"><button class="btn" id="add">+ إضافة</button></div><table><tr>'+L.c.map(c=>'<th>'+c[1]+'</th>').join('')+'<th></th></tr>'+
-a.map((x,i)=>'<tr>'+L.c.map(c=>'<td>'+esc(c[0]==='off'?((x.off||[]).length?(x.off.length+' خانة'):'-'):(x[c[0]]===''||x[c[0]]==null?'-':x[c[0]]))+'</td>').join('')+'<td>'+(key==='teachers'?'<button class="btn s o" data-a="'+i+'">الأوقات</button> ':'')+'<button class="btn s o" data-e="'+i+'">تعديل</button> <button class="btn s r" data-d="'+i+'">حذف</button></td></tr>').join('')+'</table>';
-$('#add').onclick=()=>form('إضافة',L.f(),{},o=>{o.id=nextId(a);a.push(o);stale();render()});
-document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const x=a[b.dataset.e];form('تعديل',L.f(),x,o=>{if(key==='subjects'&&o.name!==x.name)S.teachers.forEach(t=>{if(t.subject===x.name)t.subject=o.name});if(key==='rooms'&&o.name!==x.name)S.groups.forEach(g=>{if(g.room===x.name)g.room=o.name});Object.assign(x,o);stale();render()})});
+a.map((x,i)=>'<tr>'+L.c.map(c=>'<td>'+esc(c[0]==='off'?((x.off||[]).length?(x.off.length+' خانة'):'-'):c[0]==='cnt'?S.groups.filter(g=>g.level===x.name).length:c[0]==='tot'?lvTot(x):(x[c[0]]===''||x[c[0]]==null?'-':x[c[0]]))+'</td>').join('')+'<td>'+(key==='teachers'?'<button class="btn s o" data-a="'+i+'">الأوقات</button> ':'')+(key==='levels'?'<button class="btn s o" data-h="'+i+'">المواد والساعات</button> <button class="btn s o" data-s="'+i+'">+ أقسام</button> ':'')+'<button class="btn s o" data-e="'+i+'">تعديل</button> <button class="btn s r" data-d="'+i+'">حذف</button></td></tr>').join('')+'</table>';
+$('#add').onclick=()=>form('إضافة',L.f(),{},o=>{o.id=nextId(a);if(key==='levels')o.hours={};a.push(o);stale();render()});
+document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const x=a[b.dataset.e];form('تعديل',L.f(),x,o=>{if(key==='subjects'&&o.name!==x.name)S.teachers.forEach(t=>{if(t.subject===x.name)t.subject=o.name});if(key==='rooms'&&o.name!==x.name)S.groups.forEach(g=>{if(g.room===x.name)g.room=o.name});if(key==='levels'&&o.name!==x.name)S.groups.forEach(g=>{if(g.level===x.name)g.level=o.name});if(key==='subjects'&&o.name!==x.name)S.levels.forEach(l=>{if(l.hours&&x.name in l.hours){l.hours[o.name]=l.hours[x.name];delete l.hours[x.name]}});Object.assign(x,o);stale();render()})});
+document.querySelectorAll('[data-h]').forEach(b=>{const x=a[b.dataset.h];b.onclick=()=>form('ساعات المواد للمستوى '+x.name,S.subjects.map((s,i)=>({k:'h'+i,l:s.name,n:1})),Object.fromEntries(S.subjects.map((s,i)=>['h'+i,(x.hours||{})[s.name]||0])),o=>{x.hours={};S.subjects.forEach((s,i)=>{if(o['h'+i])x.hours[s.name]=o['h'+i]});stale();render()})});
+document.querySelectorAll('[data-s]').forEach(b=>{const x=a[b.dataset.s];b.onclick=()=>form('إنشاء أقسام للمستوى '+x.name,[{k:'n',l:'عدد الأقسام الجديدة',n:1},{k:'size',l:'عدد التلاميذ في القسم',n:1},{k:'rm',l:'إنشاء قاعة مخصصة لكل قسم',opts:['نعم']}],{n:2,size:30,rm:'نعم'},o=>{let c=S.groups.filter(g=>g.level===x.name).length;for(let i=0;i<o.n;i++){c++;const nm=x.name+c;S.groups.push({id:nextId(S.groups),name:nm,size:o.size||30,level:x.name,room:o.rm?'قاعة '+nm:''});if(o.rm)S.rooms.push({id:nextId(S.rooms),name:'قاعة '+nm,type:BASE,cap:40})}stale();render()})});
 document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const x=a[b.dataset.a];grid('الأوقات غير المتاحة: '+x.name,x.off||[],s=>{x.off=s;stale();render()})});
 document.querySelectorAll('#main [data-d]').forEach(b=>b.onclick=()=>{if(confirm('هل تريد الحذف؟')){a.splice(+b.dataset.d,1);stale();render()}})}
 
@@ -117,8 +134,8 @@ function dutyV(){$('#main').innerHTML='<h2>جدول الحراسة</h2><div clas
 (S.duty.length?'<div class="duty">'+S.duty.map(d=>'<div class="dd"><h4>'+esc(d.day)+'</h4>'+d.slots.map(s=>'<div class="ds"><span>'+esc(s.type)+'</span><b>'+esc(s.t)+'</b></div>').join('')+'</div>').join('')+'</div>':'<p class="msg">اضغط «توليد الحراسة».</p>');
 $('#gd').onclick=()=>{if(!S.teachers.length){alert('أضف أساتذة أولاً.');return}duty();save();render()}}
 
-function tableV(){const o=S.groups.map(g=>'<option value="g:'+g.id+'">فوج '+esc(g.name)+'</option>').join('')+S.teachers.map(t=>'<option value="t:'+t.id+'">أستاذ: '+esc(t.name)+'</option>').join('')+S.rooms.map(r=>'<option value="r:'+esc(r.name)+'">قاعة: '+esc(r.name)+'</option>').join('');
-$('#main').innerHTML='<h2>الجدول</h2><div class="bar"><select id="vs">'+o+'</select><button class="btn s o" onclick="print()">طباعة</button></div>'+(S.bad?'<p class="msg">تعذّر وضع '+S.bad+' حصة (لا توجد خانات كافية).</p>':'')+(S.acts.length?'':'<p class="msg">اضغط «توليد الجدول» في الأعلى.</p>')+'<div id="tt"></div>';
+function tableV(){const o=S.groups.map(g=>'<option value="g:'+g.id+'">قسم '+esc(g.name)+'</option>').join('')+S.teachers.map(t=>'<option value="t:'+t.id+'">أستاذ: '+esc(t.name)+'</option>').join('')+S.rooms.map(r=>'<option value="r:'+esc(r.name)+'">قاعة: '+esc(r.name)+'</option>').join('');
+$('#main').innerHTML='<h2>الجدول</h2><div class="bar"><select id="vs">'+o+'</select><button class="btn s o" onclick="print()">طباعة</button></div>'+(S.bad?'<p class="msg">تعذّر وضع '+S.bad+' حصة: '+esc((S.fail||[]).join('، '))+'. خفّف القيود أو أضف قاعات/أساتذة.</p>':'')+(S.acts.length?'':'<p class="msg">اضغط «توليد الجدول» في الأعلى.</p>')+'<div id="tt"></div>';
 const vs=$('#vs');if(view)vs.value=view;if(!vs.value)vs.selectedIndex=0;view=vs.value;vs.onchange=()=>{view=vs.value;draw()};draw()}
 function draw(){if(!view){$('#tt').innerHTML='';return}const p=view.split(':'),k=p[0],id=k==='r'?p[1]:+p[1];
 let h='<table class="tt"><tr><th></th>'+S.school.days.map(d=>'<th>'+esc(d)+'</th>').join('')+'</tr>';
@@ -126,30 +143,35 @@ S.school.hours.forEach((hr,hi)=>{h+='<tr><th>'+esc(hr)+'</th>'+S.school.days.map
 return'<td>'+(a?'<b>'+esc(a.sub)+'</b><small>'+esc(k==='g'?tn(a.t):gn(a.g))+'</small>':'')+'</td>'}).join('')+'</tr>'});
 $('#tt').innerHTML=h+'</table>'}
 
-function setV(){const sc=S.school;$('#main').innerHTML='<h2>القيود والإعدادات</h2><div style="max-width:430px"><label>اسم المؤسسة</label><input id="s1" value="'+esc(sc.name)+'"><label>أيام الدراسة (افصل بفاصلة)</label><input id="s2" value="'+esc(sc.days.join('، '))+'"><label>توقيت الحصص (افصل بفاصلة)</label><input id="s3" value="'+esc(sc.hours.join('، '))+'"><label>أقصى عدد حصص يومياً للفوج</label><input id="s4" type="number" value="'+sc.maxG+'"><label>أقصى عدد حصص يومياً للأستاذ</label><input id="s5" type="number" value="'+sc.maxT+'"><div class="bar" style="margin-top:14px"><button class="btn" id="s6">حفظ</button><button class="btn o" id="s7">الخانات المغلقة ('+S.closed.length+')</button></div><p class="msg">الخانات المغلقة تُطبّق على كل المؤسسة (استراحة، عطلة مثل مساء الثلاثاء...). أما أوقات عدم توفر كل أستاذ فتُضبط من صفحة «الأساتذة».</p></div>';
+function setV(){const sc=S.school;$('#main').innerHTML='<h2>القيود والإعدادات</h2><div style="max-width:430px"><label>اسم المؤسسة</label><input id="s1" value="'+esc(sc.name)+'"><label>أيام الدراسة (افصل بفاصلة)</label><input id="s2" value="'+esc(sc.days.join('، '))+'"><label>توقيت الحصص (افصل بفاصلة)</label><input id="s3" value="'+esc(sc.hours.join('، '))+'"><label>أقصى عدد حصص يومياً للقسم</label><input id="s4" type="number" value="'+sc.maxG+'"><label>أقصى عدد حصص يومياً للأستاذ</label><input id="s5" type="number" value="'+sc.maxT+'"><label>أقصى حصص متتالية للقسم (في الفترة الواحدة)</label><input id="s8" type="number" value="'+sc.contG+'"><label>أقصى حصص متتالية للأستاذ</label><input id="s9" type="number" value="'+sc.contT+'"><label>إلزام القسم بقاعته المخصصة</label><select id="s10"><option'+(sc.strict!=='لا'?' selected':'')+'>نعم</option><option'+(sc.strict==='لا'?' selected':'')+'>لا</option></select><div class="bar" style="margin-top:14px"><button class="btn" id="s6">حفظ</button><button class="btn o" id="s7">الخانات المغلقة ('+S.closed.length+')</button></div><p class="msg">الخانات المغلقة تُطبّق على كل المؤسسة (استراحة، عطلة مثل مساء الثلاثاء...). أما أوقات عدم توفر كل أستاذ فتُضبط من صفحة «الأساتذة». توزيع حصص المادة على أيام الأسبوع، وتقليل فراغات القسم، وتجميع حصص الأستاذ في أيام أقل، تُطبَّق تلقائياً.</p></div>';
 $('#s6').onclick=()=>{const p=x=>x.split(/[,،]/).map(y=>y.trim()).filter(Boolean),d=p($('#s2').value),hr=p($('#s3').value);if(!d.length||!hr.length){alert('أدخل الأيام والتوقيت.');return}
 if(d.length!==sc.days.length||hr.length!==sc.hours.length){S.closed=[];S.teachers.forEach(t=>t.off=[])}
-sc.name=$('#s1').value.trim()||'مدرستي';sc.days=d;sc.hours=hr;sc.maxG=Math.max(1,+$('#s4').value||8);sc.maxT=Math.max(1,+$('#s5').value||8);S.duty=[];stale();render()};
+sc.name=$('#s1').value.trim()||'مدرستي';sc.days=d;sc.hours=hr;sc.maxG=Math.max(1,+$('#s4').value||8);sc.maxT=Math.max(1,+$('#s5').value||8);sc.contG=Math.max(1,+$('#s8').value||4);sc.contT=Math.max(1,+$('#s9').value||4);sc.strict=$('#s10').value;S.duty=[];stale();render()};
 $('#s7').onclick=()=>grid('الخانات المغلقة',S.closed,s=>{S.closed=s;stale();render()})}
 
 function fet(){const sc=S.school,A=S.acts;
-return'<?xml version="1.0" encoding="UTF-8"?>\n<fet version="5.0.0">\n<Institution_Name>'+esc(sc.name)+'</Institution_Name>\n<Comments></Comments>\n<Days_List>\n<Number_of_Days>'+sc.days.length+'</Number_of_Days>\n'+sc.days.map(d=>'<Day><Name>'+esc(d)+'</Name></Day>').join('\n')+'\n</Days_List>\n<Hours_List>\n<Number_of_Hours>'+sc.hours.length+'</Number_of_Hours>\n'+sc.hours.map(h=>'<Hour><Name>'+esc(h)+'</Name></Hour>').join('\n')+'\n</Hours_List>\n<Subjects_List>\n'+S.subjects.map(s=>'<Subject><Name>'+esc(s.name)+'</Name><Comments></Comments></Subject>').join('\n')+'\n</Subjects_List>\n<Activity_Tags_List>\n</Activity_Tags_List>\n<Teachers_List>\n'+S.teachers.map(t=>'<Teacher><Name>'+esc(t.name)+'</Name><Comments></Comments></Teacher>').join('\n')+'\n</Teachers_List>\n<Students_List>\n'+S.groups.map(g=>'<Year><Name>'+esc(g.name)+'</Name><Number_of_Students>'+(g.size||0)+'</Number_of_Students><Comments></Comments><Number_of_Categories>0</Number_of_Categories><Separator></Separator></Year>').join('\n')+'\n</Students_List>\n<Activities_List>\n'+
+return'<?xml version="1.0" encoding="UTF-8"?>\n<fet version="5.0.0">\n<Institution_Name>'+esc(sc.name)+'</Institution_Name>\n<Comments></Comments>\n<Days_List>\n<Number_of_Days>'+sc.days.length+'</Number_of_Days>\n'+sc.days.map(d=>'<Day><Name>'+esc(d)+'</Name></Day>').join('\n')+'\n</Days_List>\n<Hours_List>\n<Number_of_Hours>'+sc.hours.length+'</Number_of_Hours>\n'+sc.hours.map(h=>'<Hour><Name>'+esc(h)+'</Name></Hour>').join('\n')+'\n</Hours_List>\n<Subjects_List>\n'+S.subjects.map(s=>'<Subject><Name>'+esc(s.name)+'</Name><Comments></Comments></Subject>').join('\n')+'\n</Subjects_List>\n<Activity_Tags_List>\n</Activity_Tags_List>\n<Teachers_List>\n'+S.teachers.map(t=>'<Teacher><Name>'+esc(t.name)+'</Name><Comments></Comments></Teacher>').join('\n')+'\n</Teachers_List>\n<Students_List>\n'+yearsXML()+'\n</Students_List>\n<Activities_List>\n'+
 A.map(a=>'<Activity><Teacher>'+esc(tn(a.t))+'</Teacher><Subject>'+esc(a.sub)+'</Subject><Students>'+esc(gn(a.g))+'</Students><Duration>1</Duration><Total_Duration>1</Total_Duration><Id>'+a.id+'</Id><Activity_Group_Id>0</Activity_Group_Id><Active>true</Active><Comments></Comments></Activity>').join('\n')+
 '\n</Activities_List>\n<Buildings_List>\n</Buildings_List>\n<Rooms_List>\n</Rooms_List>\n<Time_Constraints_List>\n<ConstraintBasicCompulsoryTime><Weight_Percentage>100</Weight_Percentage><Active>true</Active><Comments></Comments></ConstraintBasicCompulsoryTime>\n'+
 fetTime()+A.filter(a=>a.d>=0).map(a=>'<ConstraintActivityPreferredStartingTime><Weight_Percentage>100</Weight_Percentage><Activity_Id>'+a.id+'</Activity_Id><Preferred_Day>'+esc(sc.days[a.d])+'</Preferred_Day><Preferred_Hour>'+esc(sc.hours[a.h])+'</Preferred_Hour><Permanently_Locked>false</Permanently_Locked><Active>true</Active><Comments></Comments></ConstraintActivityPreferredStartingTime>').join('\n')+
-'\n</Time_Constraints_List>\n<Space_Constraints_List>\n<ConstraintBasicCompulsorySpace><Weight_Percentage>100</Weight_Percentage><Active>true</Active><Comments></Comments></ConstraintBasicCompulsorySpace>\n'+A.filter(a=>a.r).map(a=>'<ConstraintActivityPreferredRoom><Weight_Percentage>100</Weight_Percentage><Activity_Id>'+a.id+'</Activity_Id><Room>'+esc(a.r)+'</Room><Permanently_Locked>false</Permanently_Locked><Active>true</Active><Comments></Comments></ConstraintActivityPreferredRoom>').join('\n')+'\n</Space_Constraints_List>\n</fet>\n'}
+'\n</Time_Constraints_List>\n<Space_Constraints_List>\n<ConstraintBasicCompulsorySpace><Weight_Percentage>100</Weight_Percentage><Active>true</Active><Comments></Comments></ConstraintBasicCompulsorySpace>\n'+A.filter(a=>a.r).map(a=>'<ConstraintActivityPreferredRoom><Weight_Percentage>100</Weight_Percentage><Activity_Id>'+a.id+'</Activity_Id><Room>'+esc(a.r)+'</Room><Permanently_Locked>false</Permanently_Locked><Active>true</Active><Comments></Comments></ConstraintActivityPreferredRoom>').join('\n')+'\n'+S.groups.filter(g=>g.room).map(g=>'<ConstraintStudentsSetHomeRoom><Weight_Percentage>100</Weight_Percentage><Students>'+esc(g.name)+'</Students><Room>'+esc(g.room)+'</Room><Active>true</Active><Comments></Comments></ConstraintStudentsSetHomeRoom>').join('\n')+'\n</Space_Constraints_List>\n</fet>\n'}
+function yearsXML(){const lv=S.levels.filter(l=>S.groups.some(g=>g.level===l.name)),free=S.groups.filter(g=>!S.levels.some(l=>l.name===g.level));
+return lv.map(l=>{const gs=S.groups.filter(g=>g.level===l.name);return'<Year><Name>'+esc(l.name)+'</Name><Number_of_Students>'+gs.reduce((s,g)=>s+(g.size||0),0)+'</Number_of_Students><Comments></Comments><Number_of_Categories>0</Number_of_Categories><Separator></Separator>'+gs.map(g=>'<Group><Name>'+esc(g.name)+'</Name><Number_of_Students>'+(g.size||0)+'</Number_of_Students><Comments></Comments><Number_of_Subgroups>0</Number_of_Subgroups></Group>').join('')+'</Year>'}).concat(free.map(g=>'<Year><Name>'+esc(g.name)+'</Name><Number_of_Students>'+(g.size||0)+'</Number_of_Students><Comments></Comments><Number_of_Categories>0</Number_of_Categories><Separator></Separator></Year>')).join('\n')}
 function fetTime(){const sc=S.school,hm=k=>{const p=k.split('_');return'<Day>'+esc(sc.days[p[0]])+'</Day><Hour>'+esc(sc.hours[p[1]])+'</Hour>'},w='<Weight_Percentage>100</Weight_Percentage>',z='<Active>true</Active><Comments></Comments>';let x='';
 if(S.closed.length)x+='<ConstraintBreakTimes>'+w+'<Number_of_Break_Times>'+S.closed.length+'</Number_of_Break_Times>'+S.closed.map(k=>'<Break_Time>'+hm(k)+'</Break_Time>').join('')+z+'</ConstraintBreakTimes>\n';
 S.teachers.forEach(t=>{if((t.off||[]).length)x+='<ConstraintTeacherNotAvailableTimes>'+w+'<Teacher>'+esc(t.name)+'</Teacher><Number_of_Not_Available_Times>'+t.off.length+'</Number_of_Not_Available_Times>'+t.off.map(k=>'<Not_Available_Time>'+hm(k)+'</Not_Available_Time>').join('')+z+'</ConstraintTeacherNotAvailableTimes>\n';
 x+='<ConstraintTeacherMaxHoursDaily>'+w+'<Teacher>'+esc(t.name)+'</Teacher><Maximum_Hours_Daily>'+sc.maxT+'</Maximum_Hours_Daily>'+z+'</ConstraintTeacherMaxHoursDaily>\n'});
-S.groups.forEach(g=>{x+='<ConstraintStudentsSetMaxHoursDaily>'+w+'<Maximum_Hours_Daily>'+sc.maxG+'</Maximum_Hours_Daily><Students>'+esc(g.name)+'</Students>'+z+'</ConstraintStudentsSetMaxHoursDaily>\n'});return x}
+S.groups.forEach(g=>{x+='<ConstraintStudentsSetMaxHoursDaily>'+w+'<Maximum_Hours_Daily>'+sc.maxG+'</Maximum_Hours_Daily><Students>'+esc(g.name)+'</Students>'+z+'</ConstraintStudentsSetMaxHoursDaily>\n'});
+x+='<ConstraintStudentsMaxHoursContinuously>'+w+'<Maximum_Hours_Continuously>'+sc.contG+'</Maximum_Hours_Continuously>'+z+'</ConstraintStudentsMaxHoursContinuously>\n<ConstraintTeachersMaxHoursContinuously>'+w+'<Maximum_Hours_Continuously>'+sc.contT+'</Maximum_Hours_Continuously>'+z+'</ConstraintTeachersMaxHoursContinuously>\n<ConstraintStudentsMaxGapsPerWeek>'+w+'<Max_Gaps>0</Max_Gaps>'+z+'</ConstraintStudentsMaxGapsPerWeek>\n';
+const by={};S.acts.forEach(a=>{const k=a.g+'|'+a.sub;(by[k]=by[k]||[]).push(a.id)});
+Object.keys(by).forEach(k=>{if(by[k].length>1)x+='<ConstraintMinDaysBetweenActivities>'+w+'<Consecutive_If_Same_Day>true</Consecutive_If_Same_Day><Number_of_Activities>'+by[k].length+'</Number_of_Activities>'+by[k].map(i=>'<Activity_Id>'+i+'</Activity_Id>').join('')+'<MinDays>1</MinDays>'+z+'</ConstraintMinDaysBetweenActivities>\n'});return x}
 function csv(){const q=x=>'"'+String(x).replace(/"/g,'""')+'"';return'\ufeff'+['الرقم,المادة,الأستاذ,الفوج,القاعة,اليوم,الساعة'].concat(S.acts.map(a=>[a.id,q(a.sub),q(tn(a.t)),q(gn(a.g)),q(a.r||''),q(a.d>=0?S.school.days[a.d]:''),q(a.d>=0?S.school.hours[a.h]:'')].join(','))).join('\n')}
 function dl(n,x,t){const u=URL.createObjectURL(new Blob([x],{type:t})),a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 function exp(){$('#main').innerHTML='<h2>التصدير</h2>'+(S.acts.length?'':'<p class="msg">ولّد الجدول أولاً.</p>')+'<div class="bar"><button class="btn g" id="x1">تنزيل ملف FET (.fet)</button><button class="btn o" id="x2">تنزيل CSV</button></div><pre>'+esc(fet().slice(0,3000))+'\n...</pre>';
 $('#x1').onclick=()=>dl('timetable.fet',fet(),'application/xml');$('#x2').onclick=()=>dl('timetable.csv',csv(),'text/csv')}
 
-function render(){nav();({home:home,teachers:()=>list('teachers'),groups:()=>list('groups'),subjects:()=>list('subjects'),rooms:()=>list('rooms'),settings:setV,assign:assignV,duty:dutyV,table:tableV,export:exp})[tab]()}
+function render(){nav();({home:home,levels:()=>list('levels'),teachers:()=>list('teachers'),groups:()=>list('groups'),subjects:()=>list('subjects'),rooms:()=>list('rooms'),settings:setV,assign:assignV,duty:dutyV,table:tableV,export:exp})[tab]()}
 $('#gen').onclick=()=>{if(gen()){tab='table';render()}};
-$('#rst').onclick=()=>{if(confirm('سيتم حذف كل البيانات والعودة للبيانات الافتراضية. متابعة؟')){S=JSON.parse(JSON.stringify(DEF));view='';save();tab='home';render()}};
+$('#rst').onclick=()=>{if(confirm('سيتم حذف كل البيانات والعودة للبيانات الافتراضية. متابعة؟')){S=mkDef();view='';save();tab='home';render()}};
 render();
 </script></body></html>
